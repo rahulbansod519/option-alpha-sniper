@@ -1,0 +1,11 @@
+
+{
+  "functions": {
+    "api/*.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "env": {
+    "ANGEL_API_KEY": "@angel-api-key"
+  }
+}

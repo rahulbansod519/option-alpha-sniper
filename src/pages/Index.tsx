@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { MarketOverview } from '@/components/MarketOverview';
@@ -6,6 +5,8 @@ import { OptionChain } from '@/components/OptionChain';
 import { TradingSignals } from '@/components/TradingSignals';
 import { Portfolio } from '@/components/Portfolio';
 import { RiskManagement } from '@/components/RiskManagement';
+import { AngelOneAuth } from '@/components/AngelOneAuth';
+import { useAngelOne } from '@/hooks/useAngelOne';
 
 const Index = () => {
   const [selectedIndex, setSelectedIndex] = useState<'NIFTY' | 'BANKNIFTY'>('NIFTY');
@@ -13,6 +14,8 @@ const Index = () => {
     nifty: { price: 19650.25, change: 125.30, changePercent: 0.64 },
     banknifty: { price: 44850.75, change: -89.25, changePercent: -0.20 }
   });
+
+  const { isAuthenticated } = useAngelOne();
 
   // Simulate real-time market data updates
   useEffect(() => {
@@ -45,6 +48,10 @@ const Index = () => {
       />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {!isAuthenticated && (
+          <AngelOneAuth />
+        )}
+        
         <MarketOverview 
           selectedIndex={selectedIndex}
           marketData={marketData}
