@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { MarketOverview } from '@/components/MarketOverview';
@@ -17,27 +18,33 @@ const Index = () => {
 
   const { isAuthenticated } = useAngelOne();
 
-  // Simulate real-time market data updates
+  // Fallback simulation for when not authenticated
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMarketData(prev => ({
-        nifty: {
-          ...prev.nifty,
-          price: prev.nifty.price + (Math.random() - 0.5) * 10,
-          change: prev.nifty.change + (Math.random() - 0.5) * 2,
-          changePercent: prev.nifty.changePercent + (Math.random() - 0.5) * 0.1
-        },
-        banknifty: {
-          ...prev.banknifty,
-          price: prev.banknifty.price + (Math.random() - 0.5) * 25,
-          change: prev.banknifty.change + (Math.random() - 0.5) * 5,
-          changePercent: prev.banknifty.changePercent + (Math.random() - 0.5) * 0.15
-        }
-      }));
-    }, 2000);
+    if (!isAuthenticated) {
+      const interval = setInterval(() => {
+        setMarketData(prev => ({
+          nifty: {
+            ...prev.nifty,
+            price: prev.nifty.price + (Math.random() - 0.5) * 10,
+            change: prev.nifty.change + (Math.random() - 0.5) * 2,
+            changePercent: prev.nifty.changePercent + (Math.random() - 0.5) * 0.1
+          },
+          banknifty: {
+            ...prev.banknifty,
+            price: prev.banknifty.price + (Math.random() - 0.5) * 25,
+            change: prev.banknifty.change + (Math.random() - 0.5) * 5,
+            changePercent: prev.banknifty.changePercent + (Math.random() - 0.5) * 0.15
+          }
+        }));
+      }, 2000);
 
-    return () => clearInterval(interval);
-  }, []);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
+
+  const handleMarketDataUpdate = (newData: typeof marketData) => {
+    setMarketData(newData);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -55,6 +62,7 @@ const Index = () => {
         <MarketOverview 
           selectedIndex={selectedIndex}
           marketData={marketData}
+          onMarketDataUpdate={handleMarketDataUpdate}
         />
         
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

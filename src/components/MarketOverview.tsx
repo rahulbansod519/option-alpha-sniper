@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { TrendingUp, TrendingDown, BarChart3, Target, Zap } from 'lucide-react';
+import { useAngelOne } from '@/hooks/useAngelOne';
 
 interface MarketOverviewProps {
   selectedIndex: 'NIFTY' | 'BANKNIFTY';
@@ -10,9 +10,10 @@ interface MarketOverviewProps {
     nifty: { price: number; change: number; changePercent: number };
     banknifty: { price: number; change: number; changePercent: number };
   };
+  onMarketDataUpdate: (data: any) => void;
 }
 
-export const MarketOverview = ({ selectedIndex, marketData }: MarketOverviewProps) => {
+export const MarketOverview = ({ selectedIndex, marketData, onMarketDataUpdate }: MarketOverviewProps) => {
   const [technicals, setTechnicals] = useState({
     rsi: 58.4,
     macd: 2.3,
@@ -20,8 +21,48 @@ export const MarketOverview = ({ selectedIndex, marketData }: MarketOverviewProp
     trend: 'Bullish'
   });
 
+  const { getMarketData, isAuthenticated } = useAngelOne();
+
   const currentData = marketData[selectedIndex.toLowerCase() as keyof typeof marketData];
 
+  // Fetch real market data
+  useEffect(() => {
+    const fetchRealData = async () => {
+      if (!isAuthenticated) return;
+
+      try {
+        // NIFTY 50 data
+        const niftyData = await getMarketData('NSE', 'NIFTY 50', '99926000');
+        // Bank Nifty data
+        const bankNiftyData = await getMarketData('NSE', 'NIFTY BANK', '99926009');
+
+        if (niftyData?.data && bankNiftyData?.data) {
+          const newMarketData = {
+            nifty: {
+              price: parseFloat(niftyData.data.ltp) || marketData.nifty.price,
+              change: parseFloat(niftyData.data.netChg) || marketData.nifty.change,
+              changePercent: parseFloat(niftyData.data.prcntChg) || marketData.nifty.changePercent
+            },
+            banknifty: {
+              price: parseFloat(bankNiftyData.data.ltp) || marketData.banknifty.price,
+              change: parseFloat(bankNiftyData.data.netChg) || marketData.banknifty.change,
+              changePercent: parseFloat(bankNiftyData.data.prcntChg) || marketData.banknifty.changePercent
+            }
+          };
+          onMarketDataUpdate(newMarketData);
+        }
+      } catch (error) {
+        console.error('Error fetching market data:', error);
+      }
+    };
+
+    fetchRealData();
+    const interval = setInterval(fetchRealData, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, getMarketData, onMarketDataUpdate]);
+
+  // Update technicals based on price movements
   useEffect(() => {
     const interval = setInterval(() => {
       setTechnicals(prev => ({
@@ -30,7 +71,7 @@ export const MarketOverview = ({ selectedIndex, marketData }: MarketOverviewProp
         volatility: Math.max(10, Math.min(25, prev.volatility + (Math.random() - 0.5) * 1)),
         trend: prev.rsi > 60 ? 'Bullish' : prev.rsi < 40 ? 'Bearish' : 'Neutral'
       }));
-    }, 3000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -54,6 +95,7 @@ export const MarketOverview = ({ selectedIndex, marketData }: MarketOverviewProp
           <CardTitle className="text-slate-300 text-sm flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Current Price
+            {!isAuthenticated && <span className="text-xs text-yellow-400">(Demo)</span>}
           </CardTitle>
         </CardHeader>
         <CardContent>
